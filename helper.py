@@ -58,7 +58,7 @@ def BpFromVectorPotential(I, coilRadius, coilZ, lo, z):
 
 
 def calculateBzFromLoop(I, coilRadius, coilZ, lo, z):
-    bp = BpFromBiosavart(I=I, coilRadius=coilRadius, coilZ=coilZ, lo=lo, z=z)
+    bp = BpFromVectorPotential(I=I, coilRadius=coilRadius, coilZ=coilZ, lo=lo, z=z)
     return bp[1]
 
 def calculateBzFromCoil(I, r, l, N, lo, z):

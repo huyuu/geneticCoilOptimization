@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=50):
+def lossFunction(coil, points=40):
     # if loss already calculated, return
     if coil.loss != None:
         return coil
@@ -38,8 +38,8 @@ def lossFunction(coil, points=50):
     # get a, b at specific position
     loss = 0
     los = nu.concatenate([
-        nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//2),
-        nu.linspace(1.05*coil.minRadius, 1.4*coil.minRadius, points//2),
+        nu.linspace(0.01*coil.minRadius, 0.9*coil.minRadius, points//2),
+        nu.linspace(1.1*coil.minRadius, 1.4*coil.minRadius, points//2),
     ])
     zs = nu.linspace(-coil.Z0*1.4, coil.Z0*1.4, points)
     for lo in los:
@@ -320,7 +320,7 @@ class GeneticAgent():
 
     def runAsSlaveOnCluster(self, rawQueue='rawQueue', cookedQueue='cookedQueue', hostIP='10.32.247.50', hostPort=6379):
         workerTank = []
-        workerAmount = min(mp.cpu_count()-1, 55)
+        workerAmount = min(mp.cpu_count()*3//4, 55)
         print(f'Slave node starts with {workerAmount} workers.')
         for _ in range(workerAmount):
             worker = mp.Process(target=lossFunctionForCluster, args=(rawQueue, cookedQueue, hostIP, hostPort))

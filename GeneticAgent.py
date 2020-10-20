@@ -37,10 +37,15 @@ def lossFunction(coil, points=50):
             M += MutalInductance(r1, r2, d=abs(z2-z1)+1e-8)
     # get a, b at specific position
     loss = 0
-    los = nu.linspace(0.01*coil.minRadius, 0.9*coil.minRadius, points)
-    zs = nu.linspace(0, coil.Z0, points)
+    los = nu.concatenate([
+        nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//2),
+        nu.linspace(1.05*coil.minRadius, 1.4*coil.minRadius, points//2),
+    ])
+    zs = nu.linspace(-coil.Z0*1.4, coil.Z0*1.4, points)
     for lo in los:
         for z in zs:
+            if -coil.Z0*1.4 <= z <= coil.Z0*1.4 and lo <= coil.minRadius:
+                continue
             a = calculateBzFromCoil(I1, r1, l1, N1, lo, z)
             b = sum( (calculateBzFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
             loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
@@ -254,7 +259,7 @@ class GeneticAgent():
             nu.save('minLosses.npy', nu.array(minLosses))
 
 
-    def runAsMasterOnCluster(self, loopAmount=100, hostIP='10.32.247.48', hostPort=6379):
+    def runAsMasterOnCluster(self, loopAmount=100, hostIP='10.32.247.50', hostPort=6379):
         minLosses = []
         if os.path.exists('minLosses.npy'):
             minLosses = nu.load('minLosses.npy').tolist()
@@ -313,7 +318,7 @@ class GeneticAgent():
             nu.save('minLosses.npy', nu.array(minLosses))
 
 
-    def runAsSlaveOnCluster(self, rawQueue='rawQueue', cookedQueue='cookedQueue', hostIP='10.32.247.48', hostPort=6379):
+    def runAsSlaveOnCluster(self, rawQueue='rawQueue', cookedQueue='cookedQueue', hostIP='10.32.247.50', hostPort=6379):
         workerTank = []
         workerAmount = min(mp.cpu_count()-1, 55)
         print(f'Slave node starts with {workerAmount} workers.')
@@ -353,10 +358,10 @@ if __name__ == '__main__':
     mp.freeze_support()
     agent = GeneticAgent()
 
-    # modeString = sys.argv[1]
-    # if modeString == 'master' or modeString == 'm':
-    #     agent.runAsMasterOnCluster()
-    # elif modeString == 'slave' or modeString == 's':
-    #     agent.runAsSlaveOnCluster()
-    # agent.run()
-    agent.showBestCoils()
+    modeString = sys.argv[1]
+    if modeString == 'master' or modeString == 'm':
+        agent.runAsMasterOnCluster()
+    elif modeString == 'slave' or modeString == 's':
+        agent.runAsSlaveOnCluster()
+    agent.run()
+    # agent.showBestCoils()

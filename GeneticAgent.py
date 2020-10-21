@@ -34,7 +34,7 @@ def lossFunction(coil, points=40):
     M = 0
     for r2, z2 in coil.distributionInRealCoordinates:
         for z1 in nu.linspace(-l1/2, l1/2, N1):
-            M += MutalInductance(r1, r2, d=abs(z2-z1)+1e-8)
+            M += MutalInductance(r1, r2, d=abs(z2-z1))
     # get a, b at specific position
     loss = 0
     los = nu.concatenate([
@@ -128,8 +128,8 @@ class Coil():
 
 
     def calculateDistributionInRealCoordinates(self):
-        rs = nu.linspace(-self.Z0, self.Z0, self.columnAmount).reshape(1, -1) * self.distribution
-        zs = nu.linspace(self.minRadius, self.minRadius+self.rowAmount*self.scThickness, self.rowAmount).reshape(-1, 1) * self.distribution
+        zs = nu.linspace(-self.Z0, self.Z0, self.columnAmount).reshape(1, -1) * self.distribution
+        rs = nu.linspace(self.minRadius, self.minRadius+self.rowAmount*self.scThickness, self.rowAmount).reshape(-1, 1) * self.distribution
         indices = [ (r, z) for r, z in zip(rs[rs!=0].ravel(), zs[zs!=0].ravel()) ]
         assert len(rs) == len(zs)
         return indices
@@ -227,7 +227,7 @@ class GeneticAgent():
             _start = dt.datetime.now()
             # calculate loss function for this generation and store in self.generationQueue
             # https://github.com/psf/black/issues/564
-            with mp.Pool(processes=min(mp.cpu_count()-1, 55)) as pool:
+            with mp.Pool(processes=min(mp.cpu_count()//2, 55)) as pool:
                 self.generation = pool.map(lossFunction, self.generation)
             print('loss function calculated.')
             # boom next generation
@@ -368,5 +368,7 @@ if __name__ == '__main__':
             agent.runAsSlaveOnCluster()
     else:
         raise ValueError
+
     # agent.run()
+
     # agent.showBestCoils()

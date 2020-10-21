@@ -18,6 +18,15 @@ I = 100
 
 # Model
 
+def ellipk_dk(squaredK):
+    k = sqrt(squaredK)
+    return ellipe(squaredK)/(k*(1-k**2)) - ellipk(squaredK)/k
+
+
+def ellipe_dk(squaredK):
+    k = sqrt(squaredK)
+    return (ellipe(squaredK) - ellipk(squaredK)) / k
+
 # phi_: coil phi, a: coil radius, z_: coil z position, lo: point p's radius, z: point p's z position
 def _lo(phi_, a, z_, lo, z):
     return (z-z_)*cos(phi_) / (lo**2 + a**2 - 2*lo*a*cos(phi_) + (z-z_)**2)**1.5
@@ -141,23 +150,21 @@ def _f(phi, r1, r2, d):
 
 def MutalInductance(r1, r2, d):
     # return 0.5 * mu0 * quadrature(_f, 0, 2*nu.pi, args=(r1, r2, d), tol=1e-6, maxiter=100000)[0]
-    if r1 == 0:
-        r1 += 1e-8
-    if r2 == 0:
-        r2 += 1e-8
     squaredK = 4*r1*r2/((r1+r2)**2+d**2)
     k = nu.sqrt(squaredK) if squaredK != 0 else 0
-    if k < 0.9:
-        result = mu0 * nu.sqrt(r1*r2) * ( (2/k-k)*ellipk(squaredK) - 2/k*ellipe(squaredK) )
-    else:  # k around 1
-        result = mu0 * nu.sqrt(r1*r2) * ( (2/k-k)*ellipkm1(squaredK) - 2/k*ellipe(squaredK) )
+    # if k < 0.9:
+    #     result = mu0 * nu.sqrt(r1*r2) * ( (2/k-k)*ellipk(squaredK) - (2/k)*ellipe(squaredK) )
+    # else:  # k around 1
+    #     result = mu0 * nu.sqrt(r1*r2) * ( (2/k-k)*ellipkm1(squaredK) - (2/k)*ellipe(squaredK) )
+    result = mu0 * nu.sqrt(r1*r2) * ( (2/k-k)*ellipk(squaredK) - (2/k)*ellipe(squaredK) )
 
     if result >= 0:
         return result
     else:
-        return 0.5 * mu0 * quadrature(_f, 0, 2*nu.pi, args=(r1, r2, d), tol=1e-6, maxiter=10000)[0]
-
-
+        # return 0.5 * mu0 * quadrature(_f, 0, 2*nu.pi, args=(r1, r2, d), tol=1e-6, maxiter=10000)[0]
+        print(f'{result} = {nu.sqrt(r1*r2)} * ( ({2/k-k})*({ellipk(squaredK)}) - ({2/k})*({ellipe(squaredK)}) )')
+        print(f'with r1 = {r1}, r2 = {r2}, d = {d}, k = {k}')
+        raise ValueError
 
 
 if __name__ == '__main__':

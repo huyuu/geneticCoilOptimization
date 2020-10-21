@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=40):
+def lossFunction(coil, points=200):
     # if loss already calculated, return
     if coil.loss != None:
         return coil
@@ -302,7 +302,7 @@ class GeneticAgent():
             print('next generation made.')
             # check if should end
             _end = dt.datetime.now()
-            print('step: {:>4}, minLoss: {:10g} (time cost: {:.3g}[min])'.format(step+1, survived[0].loss, (_end-_start).total_seconds()/60))
+            print('step: {:>4}, minLoss: {:18g} (time cost: {:.3g}[min])'.format(step+1, survived[0].loss, (_end-_start).total_seconds()/60))
             # plot
             minLosses.append(survived[0].loss)
             fig = pl.figure()

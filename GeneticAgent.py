@@ -50,7 +50,7 @@ def lossFunction(coil, points=40):
             a = calculateBzFromCoil(I1, r1, l1, N1, lo, z)
             b = sum( (calculateBzFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
             # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
-            bs = nu.append(a - b/sqrt(1+(R2/L2)**2)*M/L2)
+            bs = nu.append(bs, a - b/sqrt(1+(R2/L2)**2)*M/L2)
     loss = nu.var(bs)
 
     # bs = nu.zeros((points, points))

@@ -262,7 +262,7 @@ class GeneticAgent():
             nu.save('minLosses.npy', nu.array(minLosses))
 
 
-    def runAsMasterOnCluster(self, loopAmount=100, hostIP='10.32.247.50', hostPort=6379):
+    def runAsMasterOnCluster(self, loopAmount=10000, hostIP='10.32.247.50', hostPort=6379):
         minLosses = []
         if os.path.exists('minLosses.npy'):
             minLosses = nu.load('minLosses.npy').tolist()
@@ -280,7 +280,7 @@ class GeneticAgent():
         print('Queues cleaned-up.')
         print('Start main calculation')
         # start main calculation
-        for _ in range(loopAmount):
+        for step in range(loopAmount):
             _start = dt.datetime.now()
             # push tasks into queue
             for coil in self.generation:
@@ -302,7 +302,7 @@ class GeneticAgent():
             print('next generation made.')
             # check if should end
             _end = dt.datetime.now()
-            print('minLoss: {:10g} (time cost: {:.3g}[min])'.format(survived[0].loss, (_end-_start).total_seconds()/60))
+            print('step: {:>4}, minLoss: {:10g} (time cost: {:.3g}[min])'.format(step+1, survived[0].loss, (_end-_start).total_seconds()/60))
             # plot
             minLosses.append(survived[0].loss)
             fig = pl.figure()

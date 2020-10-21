@@ -57,23 +57,60 @@ def BpFromVectorPotential(I, coilRadius, coilZ, lo, z):
     # return (Bp_r, Bp_z)
 
 
+def _Bmag_lo(z_, lo, z, lom):
+    lo_ = lom(z_)
+    beta = (lo_+lo)**2 + (z-z_)**2
+    beta_r = sqrt(beta)
+    squaredK = 4*lo*lo_ / beta
+    k = sqrt(squaredK)
+    dk_dz = -sqrt(4*lo*lo_) * beta**(-1.5) * (z-z_)
+    return ( (z-z_)/beta_r + 2*lo_*lo*(z-z_)/beta**1.5 )*ellipk(squaredK) +\
+    ( beta_r - 2*lo*lo_/beta_r )*ellipk_dk(squaredK)*dk_dz -\
+    ( (z-z_)/beta_r )*ellipe(squaredK) -\
+    ( beta_r )*ellipe_dk(squaredK)*dk_dz
+
+
+def _Bmag_z(z_, lo, z, lom):
+    lo_ = lom(z_)
+    beta = (lo_+lo)**2 + (z-z_)**2
+    beta_r = sqrt(beta)
+    squaredK = 4*lo*lo_ / beta
+    k = sqrt(squaredK)
+    dk_dlo = sqrt(lo_/lo/beta) - 2*sqrt(lo_*lo)*(lo+lo_)*beta**(-1.5)
+    return ( (lo_+lo)/beta_r - 2*lo_/beta_r + 2*lo*lo_*(lo+lo_)/beta**1.5 )*ellipk(squaredK) +\
+    ( beta_r - 2*lo*lo_/beta_r )*ellipk_dk(squaredK)*dk_dlo -\
+    ( (lo+lo_)/beta_r )*ellipe(squaredK) -\
+    ( beta_r )*ellipe_dk(squaredK)*dk_dlo
+
+
+def BzCoil(lo, z, lo_, coilZs, I):
+    # Bs_lo = 0
+    Bs_z = 0
+    lom = lambda x: lo_
+    for i, z_ in enumerate(coilZs):
+        # Bs_lo += -1.0 * _Bmag_lo(z_, lo, z, lom)
+        Bs_z += 1.0 * _Bmag_z(z_, lo, z, lom)
+    # return mu0*I/(2*pi*lo) * nu.array([Bs_lo, Bs_z])
+    return mu0*I/(2*pi*lo) * Bs_z
+
+
 def calculateBzFromLoop(I, coilRadius, coilZ, lo, z):
-    bp = BpFromVectorPotential(I=I, coilRadius=coilRadius, coilZ=coilZ, lo=lo, z=z)
-    return bp[1]
+    return BzCoil(lo=lo, z=z, lo_=coilRadius, coilZs=[coilZ], I=I)
+
 
 def calculateBzFromCoil(I, r, l, N, lo, z):
     coilZPositions = nu.linspace(-l/2, l/2, N)
     return sum((calculateBzFromLoop(I, r, coilZ, lo, z) for coilZ in coilZPositions))
 
 
-def calculateBFromCoil(coilCoordinates, minRadius, Z0, lo, z, points):
-    bp_r = 0
-    bp_z = 0
-    for a, z_ in coilCoordinates:
-        bp = BpFromBiosavart(I1, a, z_, lo, z)
-        bp_r += bp[0]
-        bp_z += bp[1]
-    return (bp_r, bp_z)
+# def calculateBFromCoil(coilCoordinates, minRadius, Z0, lo, z, points):
+#     bp_r = 0
+#     bp_z = 0
+#     for a, z_ in coilCoordinates:
+#         bp = BpFromBiosavart(I1, a, z_, lo, z)
+#         bp_r += bp[0]
+#         bp_z += bp[1]
+#     return (bp_r, bp_z)
 
 
 def plotDistribution(coilCoordinates, minRadius, Z0, points):

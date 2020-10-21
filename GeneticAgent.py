@@ -318,9 +318,9 @@ class GeneticAgent():
             nu.save('minLosses.npy', nu.array(minLosses))
 
 
-    def runAsSlaveOnCluster(self, rawQueue='rawQueue', cookedQueue='cookedQueue', hostIP='10.32.247.50', hostPort=6379):
+    def runAsSlaveOnCluster(self, rawQueue='rawQueue', cookedQueue='cookedQueue', hostIP='10.32.247.50', hostPort=6379, cores=None):
         workerTank = []
-        workerAmount = min(mp.cpu_count()*3//4, 55)
+        workerAmount = min(mp.cpu_count()//2, 55) if cores is None else cores
         print(f'Slave node starts with {workerAmount} workers.')
         for _ in range(workerAmount):
             worker = mp.Process(target=lossFunctionForCluster, args=(rawQueue, cookedQueue, hostIP, hostPort))
@@ -362,6 +362,11 @@ if __name__ == '__main__':
     if modeString == 'master' or modeString == 'm':
         agent.runAsMasterOnCluster()
     elif modeString == 'slave' or modeString == 's':
-        agent.runAsSlaveOnCluster()
-    agent.run()
+        if len(sys.argy) == 3:
+            agent.runAsSlaveOnCluster(cores=int(sys.argv[2]))
+        else:
+            agent.runAsSlaveOnCluster()
+    else:
+        raise ValueError
+    # agent.run()
     # agent.showBestCoils()

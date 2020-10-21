@@ -362,7 +362,7 @@ if __name__ == '__main__':
     if modeString == 'master' or modeString == 'm':
         agent.runAsMasterOnCluster()
     elif modeString == 'slave' or modeString == 's':
-        if len(sys.argy) == 3:
+        if len(sys.argv) == 3:
             agent.runAsSlaveOnCluster(cores=int(sys.argv[2]))
         else:
             agent.runAsSlaveOnCluster()

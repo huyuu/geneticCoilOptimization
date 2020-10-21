@@ -42,13 +42,16 @@ def lossFunction(coil, points=40):
         nu.linspace(1.1*coil.minRadius, 1.4*coil.minRadius, points//2),
     ])
     zs = nu.linspace(-coil.Z0*1.4, coil.Z0*1.4, points)
+    bs = nu.array([])
     for lo in los:
         for z in zs:
             if -coil.Z0*1.4 <= z <= coil.Z0*1.4 and lo <= coil.minRadius:
                 continue
             a = calculateBzFromCoil(I1, r1, l1, N1, lo, z)
             b = sum( (calculateBzFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
-            loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
+            # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
+            bs = nu.append(a - b/sqrt(1+(R2/L2)**2)*M/L2)
+    loss = nu.var(bs)
 
     # bs = nu.zeros((points, points))
     # los = nu.linspace(0, 0.9*coil.minRadius, points)
@@ -299,7 +302,7 @@ class GeneticAgent():
             print('next generation made.')
             # check if should end
             _end = dt.datetime.now()
-            print('minLoss: {:.4g} (time cost: {:.3g}[min])'.format(survived[0].loss, (_end-_start).total_seconds()/60))
+            print('minLoss: {:10g} (time cost: {:.3g}[min])'.format(survived[0].loss, (_end-_start).total_seconds()/60))
             # plot
             minLosses.append(survived[0].loss)
             fig = pl.figure()

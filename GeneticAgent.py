@@ -205,6 +205,34 @@ class Coil():
         return Ms.sum()
 
 
+    def plotBzDistribution(self, points=200):
+        # get L2
+        L2 = self.calculateL()
+        # get M
+        M = 0
+        for r2, z2 in self.distributionInRealCoordinates:
+            for z1 in nu.linspace(-l1/2, l1/2, N1):
+                M += MutalInductance(r1, r2, d=abs(z2-z1))
+        # get a, b at specific position
+        loss = 0
+        los = nu.concatenate([
+            nu.linspace(0.01*self.minRadius, 0.9*self.minRadius, points//2),
+            nu.linspace(1.1*self.minRadius, 1.4*self.minRadius, points//2),
+        ])
+        zs = nu.linspace(-self.Z0*1.4, self.Z0*1.4, points)
+        bs = nu.zeros((len(los), len(zs)))
+        for i, lo in enumerate(los):
+            for j, z in enumerate(zs):
+                a = calculateBzFromCoil(I1, r1, l1, N1, lo, z)
+                b = sum( (calculateBzFromLoop(I1, r2, z2, lo, z) for r2, z2 in self.distributionInRealCoordinates) )
+                # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
+                bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2
+        _los, _zs = nu.meshgrid(los, zs, indexing='ij')
+        pl.contourf(_los, _zs, bz)
+        pl.colorbar()
+        pl.show()
+
+
 class GeneticAgent():
     def __init__(self):
         self.generation = []
@@ -338,7 +366,18 @@ class GeneticAgent():
             print(coil.loss)
             print('\n')
         coil = self.generation[0]
+        coil.plotBzDistribution()
         # plotDistribution(coil.distributionInRealCoordinates, coil.minRadius, coil.Z0, points=100)
+
+
+    def showLosses(self):
+        losses = nu.load('minLosses.npy')
+        pl.title('Loss', fontsize=24)
+        pl.xlabel('Step', fontsize=22)
+        pl.ylabel(r'$B_z$ Variance', fontsize=22)
+        pl.tick_params(labelsize=16)
+        pl.plot(losses)
+        pl.show()
 
 
 # Main
@@ -369,9 +408,11 @@ if __name__ == '__main__':
             agent.runAsSlaveOnCluster(cores=int(sys.argv[2]))
         else:
             agent.runAsSlaveOnCluster()
+    elif modeString == 'pc':
+        agent.showBestCoils()
+    elif modeString == 'pl':
+        agent.showLosses()
     else:
         raise ValueError
 
     # agent.run()
-
-    # agent.showBestCoils()

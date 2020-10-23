@@ -92,24 +92,25 @@ def _Bmag_z(z_, lo, z, lom):
     ( beta_r )*ellipe_dk(squaredK)*dk_dlo
 
 
-def BzCoil(lo, z, lo_, coilZs, I):
-    # Bs_lo = 0
+def Bcoil(lo, z, lo_, coilZs, I):
+    Bs_lo = 0
     Bs_z = 0
     lom = lambda x: lo_
     for i, z_ in enumerate(coilZs):
-        # Bs_lo += -1.0 * _Bmag_lo(z_, lo, z, lom)
+        Bs_lo += -1.0 * _Bmag_lo(z_, lo, z, lom)
         Bs_z += 1.0 * _Bmag_z(z_, lo, z, lom)
-    # return mu0*I/(2*pi*lo) * nu.array([Bs_lo, Bs_z])
-    return mu0*I/(2*pi*lo) * Bs_z
+    return mu0*I/(2*pi*lo) * nu.array([Bs_lo, Bs_z])
+    # return mu0*I/(2*pi*lo) * Bs_z
 
 
-def calculateBzFromLoop(I, coilRadius, coilZ, lo, z):
-    return BzCoil(lo=lo, z=z, lo_=coilRadius, coilZs=[coilZ], I=I)
+def calculateBnormFromLoop(I, coilRadius, coilZ, lo, z):
+    bp = Bcoil(lo=lo, z=z, lo_=coilRadius, coilZs=[coilZ], I=I)
+    return sqrt(bp[0]**2 + bp[1]**2)
 
 
-def calculateBzFromCoil(I, r, l, N, lo, z):
+def calculateBnormFromCoil(I, r, l, N, lo, z):
     coilZPositions = nu.linspace(-l/2, l/2, N)
-    return sum((calculateBzFromLoop(I, r, coilZ, lo, z) for coilZ in coilZPositions))
+    return sum((calculateBnormFromLoop(I, r, coilZ, lo, z) for coilZ in coilZPositions))
 
 
 # def calculateBFromCoil(coilCoordinates, minRadius, Z0, lo, z, points):

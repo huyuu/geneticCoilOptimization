@@ -13,7 +13,7 @@ import pickle
 import redis
 import sys
 
-from helper import calculateBzFromLoop, calculateBzFromCoil, MutalInductance, plotDistribution
+from helper import calculateBnormFromLoop, calculateBnormFromCoil, MutalInductance, plotDistribution
 
 
 # Constants
@@ -47,8 +47,8 @@ def lossFunction(coil, points=200):
         for z in zs:
             if -coil.Z0*1.4 <= z <= coil.Z0*1.4 and lo <= coil.minRadius:
                 continue
-            a = calculateBzFromCoil(I1, r1, l1, N1, lo, z)
-            b = sum( (calculateBzFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
+            a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
+            b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
             # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
             bs = nu.append(bs, a - b/sqrt(1+(R2/L2)**2)*M/L2)
     loss = nu.var(bs)
@@ -223,12 +223,12 @@ class Coil():
         bs = nu.zeros((len(los), len(zs)))
         for i, lo in enumerate(los):
             for j, z in enumerate(zs):
-                a = calculateBzFromCoil(I1, r1, l1, N1, lo, z)
-                b = sum( (calculateBzFromLoop(I1, r2, z2, lo, z) for r2, z2 in self.distributionInRealCoordinates) )
+                a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
+                b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in self.distributionInRealCoordinates) )
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2
         _los, _zs = nu.meshgrid(los, zs, indexing='ij')
-        pl.contourf(_los, _zs, bz)
+        pl.contourf(_los, _zs, bs)
         pl.colorbar()
         pl.show()
 
@@ -330,7 +330,8 @@ class GeneticAgent():
             print('next generation made.')
             # check if should end
             _end = dt.datetime.now()
-            print('step: {:>4}, minLoss: {:>18.16f} (time cost: {:.3g}[min])'.format(step+1, survived[0].loss, (_end-_start).total_seconds()/60))
+            _averageLoss = nu.array([ coil.loss for coil in survived ]).mean()
+            print('step: {:>4}, minLoss: {:>18.16f} (time cost: {:.3g}[min])'.format(step+1, _averageLoss, (_end-_start).total_seconds()/60))
             # plot
             minLosses.append(survived[0].loss)
             fig = pl.figure()

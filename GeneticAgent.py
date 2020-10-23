@@ -205,7 +205,7 @@ class Coil():
         return Ms.sum()
 
 
-    def plotBzDistribution(self, points=200):
+    def plotBzDistribution(self, points=1000):
         # get L2
         L2 = self.calculateL()
         # get M
@@ -330,7 +330,7 @@ class GeneticAgent():
             print('next generation made.')
             # check if should end
             _end = dt.datetime.now()
-            print('step: {:>4}, minLoss: {:18g} (time cost: {:.3g}[min])'.format(step+1, survived[0].loss, (_end-_start).total_seconds()/60))
+            print('step: {:>4}, minLoss: {:>18.16f} (time cost: {:.3g}[min])'.format(step+1, survived[0].loss, (_end-_start).total_seconds()/60))
             # plot
             minLosses.append(survived[0].loss)
             fig = pl.figure()

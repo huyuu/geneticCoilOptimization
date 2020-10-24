@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=200):
+def lossFunction(coil, points=1000):
     # if loss already calculated, return
     if coil.loss != None:
         return coil
@@ -42,16 +42,20 @@ def lossFunction(coil, points=200):
         nu.linspace(1.1*coil.minRadius, 1.4*coil.minRadius, points//2),
     ])
     zs = nu.linspace(-coil.Z0*1.4, coil.Z0*1.4, points)
-    bs = nu.array([])
+    bsOut = nu.array([])
+    bsIn = nu.array([])
     for lo in los:
         for z in zs:
-            if -coil.Z0*1.4 <= z <= coil.Z0*1.4 and lo <= coil.minRadius:
-                continue
             a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
             b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
-            # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
-            bs = nu.append(bs, a - b/sqrt(1+(R2/L2)**2)*M/L2)
-    loss = nu.var(bs)
+            bp = a - b/sqrt(1+(R2/L2)**2)*M/L2
+            # inner
+            if -coil.Z0 <= z <= coil.Z0 and lo <= coil.minRadius:
+                bsIn = nu.append(bsIn, bp)
+            else:
+                # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
+                bsOut = nu.append(bsOut, bp)
+    loss = nu.var(bsOut) + bsIn.mean()
 
     # bs = nu.zeros((points, points))
     # los = nu.linspace(0, 0.9*coil.minRadius, points)

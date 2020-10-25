@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=1000):
+def lossFunction(coil, points=200):
     # if loss already calculated, return
     if coil.loss != None:
         return coil

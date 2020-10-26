@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=200):
+def lossFunction(coil, points=100):
     # if loss already calculated, return
     if coil.loss != None:
         return coil
@@ -86,10 +86,10 @@ def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
 
 class Coil():
     def __init__(self, baseCoil=None):
-        self.length = 10e-2
+        self.length = 24e-2
         self.Z0 = self.length/2
-        self.minRadius = 1.5e-2
-        self.scWidth = 4e-3
+        self.minRadius = 4e-2
+        self.scWidth = 12e-3
         self.scThickness = 100e-6
         self.columnAmount = int(self.length/self.scWidth)
         self.rowAmount = 4  # max turns
@@ -240,8 +240,8 @@ class Coil():
 class GeneticAgent():
     def __init__(self):
         self.generation = []
-        self.survivalPerGeneration = 20
-        self.descendantsPerLife = 8
+        self.survivalPerGeneration = 40
+        self.descendantsPerLife = 10
         # init generation
         if os.path.exists('lastGeneration.pickle'):
             with open('lastGeneration.pickle', 'rb') as file:
@@ -394,9 +394,9 @@ class GeneticAgent():
 # I1 = 1000
 # R2 = 1e-7
 # Ouer Coil
-r1 = 30e-2
+r1 = 22e-2
 N1 = 1000
-l1 = 20e-2  # 20cm
+l1 = 60e-2  # 60cm
 I1 = 1000
 R2 = 1e-7
 

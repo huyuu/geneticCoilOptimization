@@ -52,6 +52,7 @@ def lossFunction(coil, points=100):
             # inner
             if -coil.Z0 <= z <= coil.Z0 and lo <= coil.minRadius:
                 bsIn = nu.append(bsIn, bp)
+            # outer
             else:
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bsOut = nu.append(bsOut, bp)
@@ -66,8 +67,9 @@ def lossFunction(coil, points=100):
     # m = bs.mean()
     # loss = ((bs-m)**2).sum()
 
-    print(coil.distribution[-2:, :])
+    print(coil.distribution[:, :])
     print(f'L2: {L2}, M: {M}, loss: {loss}')
+    ptin(' ')
     assert loss >= 0
     # add to generationQueue
     coil.loss = loss

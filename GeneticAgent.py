@@ -39,9 +39,9 @@ def lossFunction(coil, points=100):
     loss = 0
     los = nu.concatenate([
         nu.linspace(0.01*coil.minRadius, 0.9*coil.minRadius, points//2),
-        nu.linspace(1.1*coil.minRadius, 1.4*coil.minRadius, points//2),
+        nu.linspace(1.1*coil.minRadius, 2.0*coil.minRadius, points//2),
     ])
-    zs = nu.linspace(-coil.Z0*1.4, coil.Z0*1.4, points)
+    zs = nu.linspace(-coil.Z0*2.0, coil.Z0*2.0, points)
     bsOut = nu.array([])
     bsIn = nu.array([])
     for lo in los:
@@ -56,7 +56,7 @@ def lossFunction(coil, points=100):
             else:
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bsOut = nu.append(bsOut, bp)
-    loss = nu.var(bsOut) + bsIn.mean()
+    loss = 3*nu.var(bsOut) + bsIn.mean()
 
     # bs = nu.zeros((points, points))
     # los = nu.linspace(0, 0.9*coil.minRadius, points)

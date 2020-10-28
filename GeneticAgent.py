@@ -69,7 +69,7 @@ def lossFunction(coil, points=100):
 
     print(coil.distribution[:, :])
     print(f'L2: {L2}, M: {M}, loss: {loss}')
-    ptin(' ')
+    print(' ')
     assert loss >= 0
     # add to generationQueue
     coil.loss = loss

@@ -94,7 +94,7 @@ class Coil():
         self.scWidth = 12e-3
         self.scThickness = 100e-6
         self.columnAmount = int(self.length/self.scWidth)
-        self.rowAmount = 4  # max turns
+        self.rowAmount = 8  # max turns
         #
         if baseCoil == None:
             self.distribution = nu.zeros((self.rowAmount, self.columnAmount), dtype=nu.int)

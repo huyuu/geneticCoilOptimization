@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=100):
+def lossFunction(coil, points=200):
     # if loss already calculated, return
     if coil.loss != None:
         return coil
@@ -38,10 +38,10 @@ def lossFunction(coil, points=100):
     # get a, b at specific position
     loss = 0
     los = nu.concatenate([
-        nu.linspace(0.01*coil.minRadius, 0.9*coil.minRadius, points//2),
-        nu.linspace(1.1*coil.minRadius, 2.0*coil.minRadius, points//2),
+        nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//10),
+        nu.linspace(1.05*coil.minRadius, 10.0*coil.minRadius, points*9//10),
     ])
-    zs = nu.linspace(-coil.Z0*2.0, coil.Z0*2.0, points)
+    zs = nu.linspace(-coil.Z0*10.0, coil.Z0*10.0, points)
     bsOut = nu.array([])
     bsIn = nu.array([])
     for lo in los:
@@ -88,9 +88,9 @@ def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
 
 class Coil():
     def __init__(self, baseCoil=None):
-        self.length = 24e-2
+        self.length = 30e-2
         self.Z0 = self.length/2
-        self.minRadius = 4e-2
+        self.minRadius = 6e-2
         self.scWidth = 12e-3
         self.scThickness = 100e-6
         self.columnAmount = int(self.length/self.scWidth)

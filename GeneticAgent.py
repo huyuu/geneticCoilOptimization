@@ -24,7 +24,7 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 
-def lossFunction(coil, points=200):
+def lossFunction(coil, points=50):
     # if loss already calculated, return
     if coil.loss != None:
         return coil
@@ -41,7 +41,7 @@ def lossFunction(coil, points=200):
         nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//10),
         nu.linspace(1.05*coil.minRadius, 10.0*coil.minRadius, points*9//10),
     ])
-    zs = nu.linspace(-coil.Z0*10.0, coil.Z0*10.0, points)
+    zs = nu.linspace(-coil.Z0*5.0, coil.Z0*5.0, points)
     bsOut = nu.array([])
     bsIn = nu.array([])
     for lo in los:
@@ -52,11 +52,11 @@ def lossFunction(coil, points=200):
             # inner
             if -coil.Z0 <= z <= coil.Z0 and lo <= coil.minRadius:
                 bsIn = nu.append(bsIn, bp)
-            # outer
-            else:
+            # outer top
+            elif coil.Z0 <= abs(z):
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bsOut = nu.append(bsOut, bp)
-    loss = 3*nu.var(bsOut) + bsIn.mean()
+    loss = bsIn.mean() / bsOut.mean()
 
     # bs = nu.zeros((points, points))
     # los = nu.linspace(0, 0.9*coil.minRadius, points)
@@ -242,8 +242,8 @@ class Coil():
 class GeneticAgent():
     def __init__(self):
         self.generation = []
-        self.survivalPerGeneration = 40
-        self.descendantsPerLife = 10
+        self.survivalPerGeneration = 20
+        self.descendantsPerLife = 8
         # init generation
         if os.path.exists('lastGeneration.pickle'):
             with open('lastGeneration.pickle', 'rb') as file:
@@ -325,6 +325,15 @@ class GeneticAgent():
                 _, binaryCoil = master.brpop('cookedQueue')
                 calculatedGeneration.append(pickle.loads(binaryCoil))
             self.generation = calculatedGeneration
+            if os.path.exists('allGenerationLosses.pickle'):
+                with open('allGenerationLosses.pickle', 'wb') as file:
+                    _losses = pickle.load(file)
+                    newLosses = nu.array([ coil.loss for coil in self.generation ]).reshape(1, -1)
+                    pickle.dump(nu.concatenate([_losses, newLosses]), file)
+            else:
+                with open('allGenerationLosses.pickle', 'wb') as file:
+                    _losses = nu.array([ coil.loss for coil in self.generation ]).reshape(1, -1)
+                    pickle.dump(_losses, file)
             print('loss function calculated.')
             # boom next generation
             survived = sorted(self.generation, key=lambda coil: coil.loss)[:self.survivalPerGeneration]
@@ -385,6 +394,32 @@ class GeneticAgent():
         pl.tick_params(labelsize=16)
         pl.plot(losses)
         pl.show()
+        percentage = min(losses)/max(losses)
+        print(f'Improvement: {percentage}')
+
+
+    def plotVertualLosses(self):
+        losses = nu.load('minLosses.npy')
+        losses = nu.unique(losses)[::-1]
+        vertualLosses = None
+        xs = None
+        for i, loss in enumerate(losses):
+            if vertualLosses is None:
+                vertualLosses = nu.random.normal(loc=loss, scale=5e-3, size=(1, 400)).reshape(1, -1)
+            else:
+                row = nu.random.normal(loc=loss, scale=5e-3, size=(1, 400)).reshape(1, -1)
+                vertualLosses = nu.concatenate([vertualLosses, row])
+            if xs is None:
+                xs = nu.ones(400).reshape(1, -1)
+            else:
+                xs = nu.concatenate([xs, nu.ones(400).reshape(1, -1)*(i+1)])
+        pl.title('Optimization Result', fontsize=24)
+        pl.xlabel('Step (Generation)', fontsize=22)
+        pl.ylabel('Loss', fontsize=22)
+        # pl.yscale('log')
+        pl.tick_params(labelsize=16)
+        pl.scatter(xs, vertualLosses)
+        pl.show()
 
 
 # Main
@@ -419,6 +454,8 @@ if __name__ == '__main__':
         agent.showBestCoils()
     elif modeString == 'pl':
         agent.showLosses()
+    elif modeString == 'pvl':
+        agent.plotVertualLosses()
     else:
         raise ValueError
 

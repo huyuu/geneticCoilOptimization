@@ -38,8 +38,8 @@ def lossFunction(coil, points=50):
     # get a, b at specific position
     loss = 0
     los = nu.concatenate([
-        nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//10),
-        nu.linspace(1.05*coil.minRadius, 10.0*coil.minRadius, points*9//10),
+        nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//5),
+        nu.linspace(1.05*coil.minRadius, 5.0*coil.minRadius, points*4//5),
     ])
     zs = nu.linspace(-coil.Z0*5.0, coil.Z0*5.0, points)
     bsOut = nu.array([])

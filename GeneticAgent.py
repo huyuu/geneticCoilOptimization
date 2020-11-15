@@ -325,10 +325,13 @@ class GeneticAgent():
                 _, binaryCoil = master.brpop('cookedQueue')
                 calculatedGeneration.append(pickle.loads(binaryCoil))
             self.generation = calculatedGeneration
-            if os.path.exists('allGenerationLosses.pickle'):
-                with open('allGenerationLosses.pickle', 'wb') as file:
+            if len(self.generation) == self.survivalPerGeneration:
+                pass
+            elif os.path.exists('allGenerationLosses.pickle'):
+                with open('allGenerationLosses.pickle', 'rb') as file:
                     _losses = pickle.load(file)
                     newLosses = nu.array([ coil.loss for coil in self.generation ]).reshape(1, -1)
+                with open('allGenerationLosses.pickle', 'wb') as file:
                     pickle.dump(nu.concatenate([_losses, newLosses]), file)
             else:
                 with open('allGenerationLosses.pickle', 'wb') as file:

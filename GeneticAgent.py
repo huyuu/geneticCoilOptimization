@@ -90,15 +90,15 @@ class Coil():
     def __init__(self, baseCoil=None):
         self.length = 30e-2
         self.Z0 = self.length/2
-        self.minRadius = 6e-2
+        self.minRadius = 3e-2
         self.scWidth = 12e-3
         self.scThickness = 100e-6
         self.columnAmount = int(self.length/self.scWidth)
-        self.rowAmount = 8  # max turns
+        self.rowAmount = 10  # max turns
         #
         if baseCoil == None:
             self.distribution = nu.zeros((self.rowAmount, self.columnAmount), dtype=nu.int)
-            self.distribution[[-1, -2], :] = 1
+            self.distribution[self.rowAmount//2:, :] = 1
             #
             self.distributionInRealCoordinates = self.calculateDistributionInRealCoordinates()
         else:
@@ -211,7 +211,7 @@ class Coil():
         return Ms.sum()
 
 
-    def plotBzDistribution(self, points=1000):
+    def plotBzDistribution(self, points=50):
         # get L2
         L2 = self.calculateL()
         # get M
@@ -222,10 +222,10 @@ class Coil():
         # get a, b at specific position
         loss = 0
         los = nu.concatenate([
-            nu.linspace(0.01*self.minRadius, 0.9*self.minRadius, points//2),
-            nu.linspace(1.1*self.minRadius, 1.4*self.minRadius, points//2),
+            nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//5),
+            nu.linspace(1.05*coil.minRadius, 5.0*coil.minRadius, points*4//5),
         ])
-        zs = nu.linspace(-self.Z0*1.4, self.Z0*1.4, points)
+        zs = nu.linspace(-coil.Z0*5.0, coil.Z0*5.0, points)
         bs = nu.zeros((len(los), len(zs)))
         for i, lo in enumerate(los):
             for j, z in enumerate(zs):
@@ -434,7 +434,7 @@ class GeneticAgent():
 # I1 = 1000
 # R2 = 1e-7
 # Ouer Coil
-r1 = 22e-2
+r1 = 30e-2
 N1 = 1000
 l1 = 60e-2  # 60cm
 I1 = 1000

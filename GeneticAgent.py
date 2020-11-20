@@ -222,10 +222,10 @@ class Coil():
         # get a, b at specific position
         loss = 0
         los = nu.concatenate([
-            nu.linspace(0.01*coil.minRadius, 0.95*coil.minRadius, points//5),
-            nu.linspace(1.05*coil.minRadius, 5.0*coil.minRadius, points*4//5),
+            nu.linspace(0.01*self.minRadius, 0.95*self.minRadius, points//5),
+            nu.linspace(1.05*self.minRadius, 5.0*self.minRadius, points*4//5),
         ])
-        zs = nu.linspace(-coil.Z0*5.0, coil.Z0*5.0, points)
+        zs = nu.linspace(-self.Z0*5.0, self.Z0*5.0, points)
         bs = nu.zeros((len(los), len(zs)))
         for i, lo in enumerate(los):
             for j, z in enumerate(zs):

@@ -56,7 +56,7 @@ def lossFunction(coil, points=50):
             elif coil.Z0 <= abs(z):
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bsOut = nu.append(bsOut, bp)
-    loss = bsIn.mean() / bsOut.mean()
+    loss = abs(bsIn).mean() / abs(bsOut).mean()
 
     # bs = nu.zeros((points, points))
     # los = nu.linspace(0, 0.9*coil.minRadius, points)
@@ -392,8 +392,8 @@ class GeneticAgent():
     def showLosses(self):
         losses = nu.load('minLosses.npy')
         pl.title('Loss', fontsize=24)
-        pl.xlabel('Step', fontsize=22)
-        pl.ylabel(r'$B_z$ Variance', fontsize=22)
+        pl.xlabel('Step (180 different coils compared in each step.)', fontsize=22)
+        pl.ylabel(r'Loss = $Bz_{internal}$ Mean / $Bz_{external}$ Variance [-]', fontsize=22)
         pl.tick_params(labelsize=16)
         pl.plot(losses)
         pl.show()

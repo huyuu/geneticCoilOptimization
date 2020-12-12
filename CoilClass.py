@@ -152,7 +152,7 @@ class GeneticCoil():
         # for r2, z2 in self.distributionInRealCoordinates:
         #     for z1 in nu.linspace(-l1/2, l1/2, N1):
         #         M += MutalInductance(r1, r2, d=abs(z2-z1))
-        M = calculateM(coil, outerCoilGroup)
+        M = calculateM(self, outerCoilGroup)
         # get a, b at specific position
         loss = 0
         los = nu.concatenate([

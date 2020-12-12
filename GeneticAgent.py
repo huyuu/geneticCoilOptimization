@@ -39,6 +39,7 @@ def buildMRICoilGroup():
     return CoilGroup([coil1u, coil2u, coil3u, coil4u, coil5u, coil1d, coil2d, coil3d, coil4d, coil5d])
 outerCoilGroup = buildMRICoilGroup()
 I1 = 200
+R2 = 1e-7
 
 
 def lossFunction(coil, points=50):
@@ -363,7 +364,7 @@ class GeneticAgent():
                 descendants = life.makeDescendants(amount=self.descendantsPerLife)
                 generation.append(life)
                 generation.extend(descendants)
-            print('next generation made, start calculating losses ...')
+            print(f'next generation {len(generation)} coils made, start calculating losses ...')
             # push tasks into queue
             for coil in generation:
                 master.lpush('rawQueue', pickle.dumps(coil))

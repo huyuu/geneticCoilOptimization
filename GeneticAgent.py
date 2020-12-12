@@ -14,7 +14,7 @@ import redis
 import sys
 
 from helper import calculateBnormFromLoop, calculateBnormFromCoil, calculateBnormFromCoilGroup, MutalInductance, plotDistribution
-from CoilClass import GenericCoil, FixedMultiTurnCoil, CoilGroup, calculateM
+from CoilClass import GeneticCoil, FixedMultiTurnCoil, CoilGroup, calculateM
 
 
 # Constants
@@ -267,18 +267,6 @@ def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
 
 class GeneticAgent():
     def __init__(self):
-        self.generation = []
-        self.survivalPerGeneration = 20
-        self.descendantsPerLife = 8
-        # init generation
-        if os.path.exists('lastGeneration.pickle'):
-            with open('lastGeneration.pickle', 'rb') as file:
-                self.generation = pickle.load(file)
-        else:
-            coil = Coil()
-            for _ in range(self.survivalPerGeneration):
-                self.generation.append(coil)
-
         self.minRadius = 2.5e-2  # 3cm
         self.Z0 = 6e-2  # 12cm
         self.scWidth = 12e-3  # 4mm
@@ -302,7 +290,7 @@ class GeneticAgent():
                 self.survived = pickle.load(file)
         # initial the first generation
         else:
-            coil = Coil(length=self.Z0*2, minRadius=self.minRadius, scWidth=self.scWidth, scThickness=self.scThickness, stairAmount=self.stairAmount, layerAmount=self.layerAmount)
+            coil = GeneticCoil(length=self.Z0*2, minRadius=self.minRadius, scWidth=self.scWidth, scThickness=self.scThickness, stairAmount=self.stairAmount, layerAmount=self.layerAmount)
             self.survived = coil.makeDescendants(amount=self.survivalPerGeneration)
 
 

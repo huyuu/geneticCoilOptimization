@@ -15,7 +15,7 @@ import sys
 from helper import calculateBnormFromLoop, calculateBnormFromCoil, MutalInductance, plotDistribution
 
 
-class GenericCoil():
+class GeneticCoil():
     def __init__(self, length, minRadius, scWidth, scThickness, stairAmount, layerAmount):
         self.length = length
         self.Z0 = self.length/2
@@ -33,7 +33,7 @@ class GenericCoil():
 
     @classmethod
     def initFromBaseCoil(cls, baseCoil):
-        coil = Coil(length=baseCoil.length, minRadius=baseCoil.minRadius, scWidth=baseCoil.scWidth, scThickness=baseCoil.scThickness, stairAmount=baseCoil.columnAmount, layerAmount=baseCoil.rowAmount)
+        coil = cls(length=baseCoil.length, minRadius=baseCoil.minRadius, scWidth=baseCoil.scWidth, scThickness=baseCoil.scThickness, stairAmount=baseCoil.columnAmount, layerAmount=baseCoil.rowAmount)
         coil.distribution = baseCoil.distribution.copy()
         coil.distributionInRealCoordinates = baseCoil.distributionInRealCoordinates.copy()
         coil.loss = baseCoil.loss

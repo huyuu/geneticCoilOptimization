@@ -12,7 +12,7 @@ import os
 import pickle
 import redis
 import sys
-from helper import calculateBnormFromLoop, calculateBnormFromCoil, MutalInductance, plotDistribution
+from helper import calculateBnormFromLoop, calculateBnormFromCoil, calculateBnormFromCoilGroup, MutalInductance, plotDistribution
 
 
 class GeneticCoil():

@@ -77,7 +77,7 @@ class GeneticCoil():
 
 
     def makeDescendant(self, row, column, shouldIncrease):
-        coil = Coil.initFromBaseCoil(baseCoil=self)
+        coil = GeneticCoil.initFromBaseCoil(baseCoil=self)
         if shouldIncrease:
             coil.distribution[row, column] = 1
             coil.distribution[row, -1-column] = 1

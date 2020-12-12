@@ -273,7 +273,7 @@ class GeneticAgent():
         self.scWidth = 12e-3  # 4mm
         self.scThickness = 0.1e-3  # 0.1mm
         self.airGap = self.scThickness/2
-        self.layerAmount = 8
+        self.layerAmount = 20
         self.stairAmount = int(self.Z0*2/self.scWidth)
         self.B0 = 1
 
@@ -415,7 +415,7 @@ class GeneticAgent():
             print(coil.loss)
             print('\n')
         coil = self.survived[0]
-        coil.plotBzDistribution()
+        coil.plotBzDistribution(outerCoilGroup, I1, R2)
         # plotDistribution(coil.distributionInRealCoordinates, coil.minRadius, coil.Z0, points=100)
 
 

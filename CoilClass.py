@@ -144,14 +144,15 @@ class GeneticCoil():
         return Ms.sum()
 
 
-    def plotBzDistribution(self, points=50):
+    def plotBzDistribution(self, outerCoilGroup, I1, R2, points=50):
         # get L2
         L2 = self.calculateL()
         # get M
-        M = 0
-        for r2, z2 in self.distributionInRealCoordinates:
-            for z1 in nu.linspace(-l1/2, l1/2, N1):
-                M += MutalInductance(r1, r2, d=abs(z2-z1))
+        # M = 0
+        # for r2, z2 in self.distributionInRealCoordinates:
+        #     for z1 in nu.linspace(-l1/2, l1/2, N1):
+        #         M += MutalInductance(r1, r2, d=abs(z2-z1))
+        M = calculateM(coil, outerCoilGroup)
         # get a, b at specific position
         loss = 0
         los = nu.concatenate([
@@ -162,7 +163,8 @@ class GeneticCoil():
         bs = nu.zeros((len(los), len(zs)))
         for i, lo in enumerate(los):
             for j, z in enumerate(zs):
-                a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
+                # a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
+                a = calculateBnormFromCoilGroup(outerCoilGroup, I1, lo, z)
                 b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in self.distributionInRealCoordinates) )
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2

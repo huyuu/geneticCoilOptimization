@@ -279,6 +279,32 @@ class GeneticAgent():
             for _ in range(self.survivalPerGeneration):
                 self.generation.append(coil)
 
+        self.minRadius = 2.5e-2  # 3cm
+        self.Z0 = 6e-2  # 12cm
+        self.scWidth = 12e-3  # 4mm
+        self.scThickness = 0.1e-3  # 0.1mm
+        self.airGap = self.scThickness/2
+        self.layerAmount = 8
+        self.stairAmount = int(self.Z0*2/self.scWidth)
+        self.B0 = 1
+
+        self.survivalPerGeneration = 20
+        self.descendantsPerLife = 8
+        # set avgLosses
+        if os.path.exists('averageLosses.pickle'):
+            with open('averageLosses.pickle', 'rb') as file:
+                self.averageLosses = pickle.load(file)
+        else:
+            self.averageLosses = nu.array([])
+        # get the last generation
+        if os.path.exists('lastSurvived.pickle'):
+            with open('lastSurvived.pickle', 'rb') as file:
+                self.survived = pickle.load(file)
+        # initial the first generation
+        else:
+            coil = Coil(length=self.Z0*2, minRadius=self.minRadius, scWidth=self.scWidth, scThickness=self.scThickness, stairAmount=self.stairAmount, layerAmount=self.layerAmount)
+            self.survived = coil.makeDescendants(amount=self.survivalPerGeneration)
+
 
     # http://ja.pymotw.com/2/multiprocessing/communication.html
     # https://qiita.com/uesseu/items/791d918c5a076a5b7265#ネットワーク越しの並列化
@@ -288,18 +314,19 @@ class GeneticAgent():
             minLosses = nu.load('minLosses.npy').tolist()
         for _ in range(loopAmount):
             _start = dt.datetime.now()
+            # boom babies
+            generation = []
+            for life in self.survived:
+                descendants = life.makeDescendants(amount=self.descendantsPerLife)
+                generation.append(life)
+                generation.extend(descendants)
             # calculate loss function for this generation and store in self.generationQueue
             # https://github.com/psf/black/issues/564
             with mp.Pool(processes=min(mp.cpu_count()//2, 55)) as pool:
-                self.generation = pool.map(lossFunction, self.generation)
+                generation = pool.map(lossFunction, generation)
             print('loss function calculated.')
-            # boom next generation
-            survived = sorted(self.generation, key=lambda coil: coil.loss)[:self.survivalPerGeneration]
-            self.generation = []
-            for life in survived:
-                descendants = life.makeDescendants(amount=self.descendantsPerLife)
-                self.generation.append(life)
-                self.generation.extend(descendants)
+            # choose survivals
+            self.survived = sorted(generation, key=lambda coil: coil.loss)[:self.survivalPerGeneration]
             print('next generation made.')
             # check if should end
             _end = dt.datetime.now()
@@ -316,8 +343,8 @@ class GeneticAgent():
             fig.savefig('trainingResult.png')
             pl.close(fig)
             # save coil
-            with open('lastGeneration.pickle', 'wb') as file:
-                pickle.dump(survived, file)
+            with open('lastSurvived.pickle', 'wb') as file:
+                pickle.dump(self.survived, file)
             # https://deepage.net/features/numpy-loadsave.html
             nu.save('minLosses.npy', nu.array(minLosses))
 
@@ -342,42 +369,30 @@ class GeneticAgent():
         # start main calculation
         for step in range(loopAmount):
             _start = dt.datetime.now()
+            # boom babies
+            generation = []
+            for life in self.survived:
+                descendants = life.makeDescendants(amount=self.descendantsPerLife)
+                generation.append(life)
+                generation.extend(descendants)
+            print('next generation made, start calculating losses ...')
             # push tasks into queue
-            for coil in self.generation:
+            for coil in generation:
                 master.lpush('rawQueue', pickle.dumps(coil))
             # get calculated coils
             calculatedGeneration = []
-            for _ in range(len(self.generation)):
+            for _ in range(len(generation)):
                 _, binaryCoil = master.brpop('cookedQueue')
                 calculatedGeneration.append(pickle.loads(binaryCoil))
-            self.generation = calculatedGeneration
-            # if len(self.generation) == self.survivalPerGeneration:
-            #     pass
-            # elif os.path.exists('allGenerationLosses.pickle'):
-            #     with open('allGenerationLosses.pickle', 'rb') as file:
-            #         _losses = pickle.load(file)
-            #         newLosses = nu.array([ coil.loss for coil in self.generation ]).reshape(1, -1)
-            #     with open('allGenerationLosses.pickle', 'wb') as file:
-            #         pickle.dump(nu.concatenate([_losses, newLosses]), file)
-            # else:
-            #     with open('allGenerationLosses.pickle', 'wb') as file:
-            #         _losses = nu.array([ coil.loss for coil in self.generation ]).reshape(1, -1)
-            #         pickle.dump(_losses, file)
             print('loss function calculated.')
             # boom next generation
-            survived = sorted(self.generation, key=lambda coil: coil.loss)[:self.survivalPerGeneration]
-            self.generation = []
-            for life in survived:
-                descendants = life.makeDescendants(amount=self.descendantsPerLife)
-                self.generation.append(life)
-                self.generation.extend(descendants)
-            print('next generation made.')
+            self.survived = sorted(calculatedGeneration, key=lambda coil: coil.loss)[:self.survivalPerGeneration]
             # check if should end
             _end = dt.datetime.now()
-            _averageLoss = nu.array([ coil.loss for coil in survived ]).mean()
+            _averageLoss = nu.array([ coil.loss for coil in self.survived ]).mean()
             print('step: {:>4}, minLoss: {:>18.16f} (time cost: {:.3g}[min])'.format(step+1, _averageLoss, (_end-_start).total_seconds()/60))
             # plot
-            minLosses.append(survived[0].loss)
+            minLosses.append(self.survived[0].loss)
             fig = pl.figure()
             pl.title('Training Result', fontsize=22)
             pl.xlabel('loop count', fontsize=18)
@@ -388,8 +403,8 @@ class GeneticAgent():
             fig.savefig('trainingResult.png')
             pl.close(fig)
             # save coil
-            with open('lastGeneration.pickle', 'wb') as file:
-                pickle.dump(survived, file)
+            with open('lastSurvived.pickle', 'wb') as file:
+                pickle.dump(self.survived, file)
             # https://deepage.net/features/numpy-loadsave.html
             nu.save('minLosses.npy', nu.array(minLosses))
 
@@ -406,11 +421,11 @@ class GeneticAgent():
 
 
     def showBestCoils(self):
-        for coil in self.generation:
+        for coil in self.survived:
             print(coil.distribution)
             print(coil.loss)
             print('\n')
-        coil = self.generation[0]
+        coil = self.survived[0]
         coil.plotBzDistribution()
         # plotDistribution(coil.distributionInRealCoordinates, coil.minRadius, coil.Z0, points=100)
 

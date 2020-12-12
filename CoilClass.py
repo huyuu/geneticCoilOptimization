@@ -189,7 +189,7 @@ class FixedMultiTurnCoil():
 
 
     def __calculateCoordinates(self):
-        rs = nu.linspace(-self.coilWidth/2, self.coilWidth/2, self.turnAmount) + self.centerWidth
+        rs = nu.linspace(-self.coilWidth/2, self.coilWidth/2, self.turnAmount) + self.centerRadius
         zs = nu.ones(self.turnAmount) * (self.centerHeight-self.coilHeight/2)
         assert len(rs) == len(zs)
         return [ (r, z) for r, z in zip(rs, zs) ]

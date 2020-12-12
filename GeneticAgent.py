@@ -25,17 +25,17 @@ mu0 = 4*nu.pi*1e-7
 # Model
 
 def buildMRICoilGroup():
-    coil1u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=170.8e-3, leftDownPointHeight=(23.04e-3)/2, coilHeight=10.2e-3, turnAmount=62)
-    coil2u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=174.8e-3, leftDownPointHeight=(23.04e-3)/2+10.2e-3, coilHeight=10.2e-3, turnAmount=68)
-    coil3u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=185.8e-3, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3, coilHeight=10.2e-3, turnAmount=85)
-    coil4u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3+10.2e-3, coilHeight=10.2e-3, turnAmount=165)
-    coil5u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3+10.2e-3*2, coilHeight=10.2e-3, turnAmount=165)
+    coil1u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=170.8e-3/2, leftDownPointHeight=(23.04e-3)/2, coilHeight=10.2e-3, turnAmount=62)
+    coil2u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=174.8e-3/2, leftDownPointHeight=(23.04e-3)/2+10.2e-3, coilHeight=10.2e-3, turnAmount=68)
+    coil3u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=185.8e-3/2, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3, coilHeight=10.2e-3, turnAmount=85)
+    coil4u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=237.6e-3/2, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3+10.2e-3, coilHeight=10.2e-3, turnAmount=165)
+    coil5u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=237.6e-3/2, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3+10.2e-3*2, coilHeight=10.2e-3, turnAmount=165)
 
-    coil1d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=170.8e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3, coilHeight=10.2e-3, turnAmount=62)
-    coil2d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=174.8e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2, coilHeight=10.2e-3, turnAmount=68)
-    coil3d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=185.8e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3, coilHeight=10.2e-3, turnAmount=85)
-    coil4d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3*2, coilHeight=10.2e-3, turnAmount=165)
-    coil5d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3*3, coilHeight=10.2e-3, turnAmount=165)
+    coil1d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=170.8e-3/2, leftDownPointHeight=-23.04e-3/2-10.2e-3, coilHeight=10.2e-3, turnAmount=62)
+    coil2d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=174.8e-3/2, leftDownPointHeight=-23.04e-3/2-10.2e-3*2, coilHeight=10.2e-3, turnAmount=68)
+    coil3d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=185.8e-3/2, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3, coilHeight=10.2e-3, turnAmount=85)
+    coil4d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=237.6e-3/2, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3*2, coilHeight=10.2e-3, turnAmount=165)
+    coil5d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3/2, outerRadius=237.6e-3/2, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3*3, coilHeight=10.2e-3, turnAmount=165)
     return CoilGroup([coil1u, coil2u, coil3u, coil4u, coil5u, coil1d, coil2d, coil3d, coil4d, coil5d])
 outerCoilGroup = buildMRICoilGroup()
 I1 = 200
@@ -268,7 +268,7 @@ def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
 
 class GeneticAgent():
     def __init__(self):
-        self.minRadius = 2.5e-2  # 3cm
+        self.minRadius = 2.5e-2  # 2.5cm
         self.Z0 = 6e-2  # 12cm
         self.scWidth = 12e-3  # 4mm
         self.scThickness = 0.1e-3  # 0.1mm

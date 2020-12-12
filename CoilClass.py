@@ -169,9 +169,14 @@ class GeneticCoil():
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2
         _los, _zs = nu.meshgrid(los, zs, indexing='ij')
+        pl.title('Bnorm Distribution around Coil', fontsize=28)
+        pl.xlabel(r'$\rho$ Axis', fontsize=24)
+        pl.ylabel(r'$z$ Axis', fontsize=24)
         pl.contourf(_los, _zs, bs)
         pl.colorbar()
+        pl.tick_params(labelsize=18)
         pl.show()
+
 
 
 

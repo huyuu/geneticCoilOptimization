@@ -113,6 +113,13 @@ def calculateBnormFromCoil(I, r, l, N, lo, z):
     return sum((calculateBnormFromLoop(I, r, coilZ, lo, z) for coilZ in coilZPositions))
 
 
+def calculateBnormFromCoilGroup(coilGroup, I1, lo, z):
+    bp = 0
+    for _r, _z in coilGroup.distributionInRealCoordinates:
+        bp += calculateBnormFromLoop(I, _r, _z, lo, z)
+    return bp
+
+
 # def calculateBFromCoil(coilCoordinates, minRadius, Z0, lo, z, points):
 #     bp_r = 0
 #     bp_z = 0

@@ -13,7 +13,8 @@ import pickle
 import redis
 import sys
 
-from helper import calculateBnormFromLoop, calculateBnormFromCoil, MutalInductance, plotDistribution
+from helper import calculateBnormFromLoop, calculateBnormFromCoil, calculateBnormFromCoilGroup, MutalInductance, plotDistribution
+from CoilClass import GenericCoil, FixedMultiTurnCoil, CoilGroup, calculateM
 
 
 # Constants
@@ -23,6 +24,22 @@ mu0 = 4*nu.pi*1e-7
 
 # Model
 
+def buildMRICoilGroup():
+    coil1u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=170.8e-3, leftDownPointHeight=(23.04e-3)/2, coilHeight=10.2e-3, turnAmount=62)
+    coil2u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=174.8e-3, leftDownPointHeight=(23.04e-3)/2+10.2e-3, coilHeight=10.2e-3, turnAmount=68)
+    coil3u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=185.8e-3, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3, coilHeight=10.2e-3, turnAmount=85)
+    coil4u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3+10.2e-3, coilHeight=10.2e-3, turnAmount=165)
+    coil5u = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=23.04e-3/2+10.2e-3*2+45.76e-3+10.2e-3*2, coilHeight=10.2e-3, turnAmount=165)
+
+    coil1d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=170.8e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3, coilHeight=10.2e-3, turnAmount=62)
+    coil2d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=174.8e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2, coilHeight=10.2e-3, turnAmount=68)
+    coil3d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=185.8e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3, coilHeight=10.2e-3, turnAmount=85)
+    coil4d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3*2, coilHeight=10.2e-3, turnAmount=165)
+    coil5d = FixedMultiTurnCoil.initFromAsao(innerRadius=130e-3, outerRadius=237.6e-3, leftDownPointHeight=-23.04e-3/2-10.2e-3*2-45.76e-3-10.2e-3*3, coilHeight=10.2e-3, turnAmount=165)
+    return CoilGroup([coil1u, coil2u, coil3u, coil4u, coil5u, coil1d, coil2d, coil3d, coil4d, coil5d])
+outerCoilGroup = buildMRICoilGroup()
+I1 = 200
+
 
 def lossFunction(coil, points=50):
     # if loss already calculated, return
@@ -31,10 +48,11 @@ def lossFunction(coil, points=50):
     # get L2
     L2 = coil.calculateL()
     # get M
-    M = 0
-    for r2, z2 in coil.distributionInRealCoordinates:
-        for z1 in nu.linspace(-l1/2, l1/2, N1):
-            M += MutalInductance(r1, r2, d=abs(z2-z1))
+    # M = 0
+    # for r2, z2 in coil.distributionInRealCoordinates:
+    #     for z1 in nu.linspace(-l1/2, l1/2, N1):
+    #         M += MutalInductance(r1, r2, d=abs(z2-z1))
+    M = calculateM(coil, outerCoilGroup)
     # get a, b at specific position
     loss = 0
     los = nu.concatenate([
@@ -46,7 +64,8 @@ def lossFunction(coil, points=50):
     bsIn = nu.array([])
     for lo in los:
         for z in zs:
-            a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
+            a = calculateBnormFromCoilGroup(outerCoilGroup, I1, lo, z)
+            # a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
             b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in coil.distributionInRealCoordinates) )
             bp = a - b/sqrt(1+(R2/L2)**2)*M/L2
             # inner
@@ -84,159 +103,166 @@ def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
         coil = lossFunction(coil)
         binaryCoil = pickle.dumps(coil)
         slave.lpush(cookedQueue, binaryCoil)
-
-
-class Coil():
-    def __init__(self, baseCoil=None):
-        self.length = 30e-2
-        self.Z0 = self.length/2
-        self.minRadius = 3e-2
-        self.scWidth = 12e-3
-        self.scThickness = 100e-6
-        self.columnAmount = int(self.length/self.scWidth)
-        self.rowAmount = 10  # max turns
-        #
-        if baseCoil == None:
-            self.distribution = nu.zeros((self.rowAmount, self.columnAmount), dtype=nu.int)
-            self.distribution[self.rowAmount//2:, :] = 1
-            #
-            self.distributionInRealCoordinates = self.calculateDistributionInRealCoordinates()
-        else:
-            self.distribution = baseCoil.distribution.copy()
-            self.distributionInRealCoordinates = self.calculateDistributionInRealCoordinates()
-        #
-        self.loss = None
-
-
-    # for pickle
-    def __getstate__(self):
-        return {
-            'length': self.length,
-            'Z0': self.Z0,
-            'minRadius': self.minRadius,
-            'scWidth': self.scWidth,
-            'scThickness': self.scThickness,
-            'columnAmount': self.columnAmount,
-            'rowAmount': self.rowAmount,
-            'distribution': self.distribution.tolist(),
-            'distributionInRealCoordinates': self.distributionInRealCoordinates,
-            'loss': self.loss
-        }
-
-    def __setstate__(self, state):
-        self.length = state['length']
-        self.Z0 = state['Z0']
-        self.minRadius = state['minRadius']
-        self.scWidth = state['scWidth']
-        self.scThickness = state['scThickness']
-        self.columnAmount = state['columnAmount']
-        self.rowAmount = state['rowAmount']
-        self.distribution = nu.array(state['distribution'])
-        self.distributionInRealCoordinates = state['distributionInRealCoordinates']
-        self.loss = state['loss']
-
-
-    def calculateDistributionInRealCoordinates(self):
-        zs = nu.linspace(-self.Z0, self.Z0, self.columnAmount).reshape(1, -1) * self.distribution
-        rs = nu.linspace(self.minRadius, self.minRadius+self.rowAmount*self.scThickness, self.rowAmount).reshape(-1, 1) * self.distribution
-        indices = [ (r, z) for r, z in zip(rs[rs!=0].ravel(), zs[zs!=0].ravel()) ]
-        assert len(rs) == len(zs)
-        return indices
-
-
-    def makeDescendant(self, row, column, shouldIncrease):
-        coil = Coil(baseCoil=self)
-        if shouldIncrease:
-            coil.distribution[row, column] = 1
-            coil.distribution[row, -1-column] = 1
-        else:
-            coil.distribution[row, column] = 0
-            coil.distribution[row, -1-column] = 0
-        # print(coil.distribution[-2:, :])
-        # print(' ')
-        return coil
-
-
-    def makeDescendants(self, amount):
-        descendants = []
-        count = 0
-        amount = amount // 2
-        candidates = []
-        # set candidates
-        if self.columnAmount % 2 == 1:#odd
-            candidates = nu.random.permutation((self.columnAmount+1)//2).tolist()
-        else:#even
-            candidates = nu.random.permutation(self.columnAmount//2).tolist()
-        increasedColumns = set()
-        # add increased descendants
-        while count <= amount and len(candidates) > 0:
-            chosenColumn = candidates.pop()
-            rows = self.distribution[:, chosenColumn]
-            if rows[0] == 1:# can't be increased
-                continue
-            else:# can be increased
-                row = nu.where(rows==0)[0][-1]
-                descendants.append(self.makeDescendant(row=row, column=chosenColumn, shouldIncrease=True))
-                increasedColumns.add(chosenColumn)
-                count += 1
-        # add decreased descendants
-        count = 0
-        if self.columnAmount % 2 == 1:#odd
-            candidates = nu.random.permutation(list(set(nu.arange((self.columnAmount+1)//2).tolist()) - increasedColumns)).tolist()
-        else:#even
-            candidates = nu.random.permutation(list(set(nu.arange(self.columnAmount//2).tolist()) - increasedColumns)).tolist()
-        decreasedColumns = set()
-        while count <= amount and len(candidates) > 0:
-            chosenColumn = candidates.pop()
-            rows = self.distribution[:, chosenColumn]
-            if rows[-1] == 0:# can't be decreased
-                continue
-            else:# can be decreased
-                row = nu.where(rows==1)[0][0]
-                descendants.append(self.makeDescendant(row=row, column=chosenColumn, shouldIncrease=False))
-                decreasedColumns.add(chosenColumn)
-                count += 1
-
-        return descendants
-
-
-    def calculateL(self):
-        # get Ms between all turns
-        Ms = nu.zeros((len(self.distributionInRealCoordinates), len(self.distributionInRealCoordinates)))
-        for i, (r, z) in enumerate(self.distributionInRealCoordinates):
-            for j in range(i, len(self.distributionInRealCoordinates)):
-                r_, z_ = self.distributionInRealCoordinates[j]
-                Ms[i, j] = MutalInductance(r_, r, d=abs(z-z_)+1e-8)
-        Ms += nu.triu(Ms, k=1).T
-        return Ms.sum()
-
-
-    def plotBzDistribution(self, points=50):
-        # get L2
-        L2 = self.calculateL()
-        # get M
-        M = 0
-        for r2, z2 in self.distributionInRealCoordinates:
-            for z1 in nu.linspace(-l1/2, l1/2, N1):
-                M += MutalInductance(r1, r2, d=abs(z2-z1))
-        # get a, b at specific position
-        loss = 0
-        los = nu.concatenate([
-            nu.linspace(0.01*self.minRadius, 0.95*self.minRadius, points//5),
-            nu.linspace(1.05*self.minRadius, 5.0*self.minRadius, points*4//5),
-        ])
-        zs = nu.linspace(-self.Z0*5.0, self.Z0*5.0, points)
-        bs = nu.zeros((len(los), len(zs)))
-        for i, lo in enumerate(los):
-            for j, z in enumerate(zs):
-                a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
-                b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in self.distributionInRealCoordinates) )
-                # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
-                bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2
-        _los, _zs = nu.meshgrid(los, zs, indexing='ij')
-        pl.contourf(_los, _zs, bs)
-        pl.colorbar()
-        pl.show()
+#
+#
+# class Coil():
+#     def __init__(self, baseCoil=None):
+#         self.length = 12e-2
+#         self.Z0 = self.length/2
+#         self.minRadius = 2.5e-2
+#         self.scWidth = 12e-3
+#         self.scThickness = 100e-6
+#         self.columnAmount = int(self.length/self.scWidth)
+#         self.rowAmount = 20  # max turns
+#         #
+#         if baseCoil == None:
+#             self.distribution = nu.zeros((self.rowAmount, self.columnAmount), dtype=nu.int)
+#             self.distribution[self.rowAmount//2:, :] = 1
+#             #
+#             self.distributionInRealCoordinates = self.calculateDistributionInRealCoordinates()
+#         else:
+#             self.distribution = baseCoil.distribution.copy()
+#             self.distributionInRealCoordinates = self.calculateDistributionInRealCoordinates()
+#         #
+#         self.loss = None
+#
+#
+#     # for pickle
+#     def __getstate__(self):
+#         return {
+#             'length': self.length,
+#             'Z0': self.Z0,
+#             'minRadius': self.minRadius,
+#             'scWidth': self.scWidth,
+#             'scThickness': self.scThickness,
+#             'columnAmount': self.columnAmount,
+#             'rowAmount': self.rowAmount,
+#             'distribution': self.distribution.tolist(),
+#             'distributionInRealCoordinates': self.distributionInRealCoordinates,
+#             'loss': self.loss
+#         }
+#
+#     def __setstate__(self, state):
+#         self.length = state['length']
+#         self.Z0 = state['Z0']
+#         self.minRadius = state['minRadius']
+#         self.scWidth = state['scWidth']
+#         self.scThickness = state['scThickness']
+#         self.columnAmount = state['columnAmount']
+#         self.rowAmount = state['rowAmount']
+#         self.distribution = nu.array(state['distribution'])
+#         self.distributionInRealCoordinates = state['distributionInRealCoordinates']
+#         self.loss = state['loss']
+#
+#
+#     def calculateDistributionInRealCoordinates(self):
+#         zs = nu.linspace(-self.Z0, self.Z0, self.columnAmount).reshape(1, -1) * self.distribution
+#         rs = nu.linspace(self.minRadius, self.minRadius+self.rowAmount*self.scThickness, self.rowAmount).reshape(-1, 1) * self.distribution
+#         indices = [ (r, z) for r, z in zip(rs[rs!=0].ravel(), zs[zs!=0].ravel()) ]
+#         assert len(rs) == len(zs)
+#         return indices
+#
+#
+#     def makeDescendant(self, row, column, shouldIncrease):
+#         coil = Coil(baseCoil=self)
+#         if shouldIncrease:
+#             coil.distribution[row, column] = 1
+#             coil.distribution[row, -1-column] = 1
+#         else:
+#             coil.distribution[row, column] = 0
+#             coil.distribution[row, -1-column] = 0
+#         # print(coil.distribution[-2:, :])
+#         # print(' ')
+#         return coil
+#
+#
+#     def makeDescendants(self, amount):
+#         descendants = []
+#         count = 0
+#         amount = amount // 2
+#         candidates = []
+#         # set candidates
+#         if self.columnAmount % 2 == 1:#odd
+#             candidates = nu.random.permutation((self.columnAmount+1)//2).tolist()
+#         else:#even
+#             candidates = nu.random.permutation(self.columnAmount//2).tolist()
+#         increasedColumns = set()
+#         # add increased descendants
+#         while count <= amount and len(candidates) > 0:
+#             chosenColumn = candidates.pop()
+#             rows = self.distribution[:, chosenColumn]
+#             if rows[0] == 1:# can't be increased
+#                 continue
+#             else:# can be increased
+#                 row = nu.where(rows==0)[0][-1]
+#                 descendants.append(self.makeDescendant(row=row, column=chosenColumn, shouldIncrease=True))
+#                 increasedColumns.add(chosenColumn)
+#                 count += 1
+#         # add decreased descendants
+#         count = 0
+#         if self.columnAmount % 2 == 1:#odd
+#             candidates = nu.random.permutation(list(set(nu.arange((self.columnAmount+1)//2).tolist()) - increasedColumns)).tolist()
+#         else:#even
+#             candidates = nu.random.permutation(list(set(nu.arange(self.columnAmount//2).tolist()) - increasedColumns)).tolist()
+#         decreasedColumns = set()
+#         while count <= amount and len(candidates) > 0:
+#             chosenColumn = candidates.pop()
+#             rows = self.distribution[:, chosenColumn]
+#             if rows[-1] == 0:# can't be decreased
+#                 continue
+#             else:# can be decreased
+#                 row = nu.where(rows==1)[0][0]
+#                 descendants.append(self.makeDescendant(row=row, column=chosenColumn, shouldIncrease=False))
+#                 decreasedColumns.add(chosenColumn)
+#                 count += 1
+#
+#         return descendants
+#
+#
+#     def calculateL(self):
+#         # get Ms between all turns
+#         Ms = nu.zeros((len(self.distributionInRealCoordinates), len(self.distributionInRealCoordinates)))
+#         for i, (r, z) in enumerate(self.distributionInRealCoordinates):
+#             for j in range(i, len(self.distributionInRealCoordinates)):
+#                 r_, z_ = self.distributionInRealCoordinates[j]
+#                 Ms[i, j] = MutalInductance(r_, r, d=abs(z-z_)+1e-8)
+#         Ms += nu.triu(Ms, k=1).T
+#         return Ms.sum()
+#
+#
+#     def plotBzDistribution(self, points=50):
+#         # get L2
+#         L2 = self.calculateL()
+#         # get M
+#         M = 0
+#         for r2, z2 in self.distributionInRealCoordinates:
+#             for z1 in nu.linspace(-l1/2, l1/2, N1):
+#                 M += MutalInductance(r1, r2, d=abs(z2-z1))
+#         # get a, b at specific position
+#         loss = 0
+#         los = nu.concatenate([
+#             nu.linspace(0.01*self.minRadius, 0.95*self.minRadius, points//5),
+#             nu.linspace(1.05*self.minRadius, 5.0*self.minRadius, points*4//5),
+#         ])
+#         zs = nu.linspace(-self.Z0*5.0, self.Z0*5.0, points)
+#         bs = nu.zeros((len(los), len(zs)))
+#         for i, lo in enumerate(los):
+#             for j, z in enumerate(zs):
+#                 a = calculateBnormFromCoil(I1, r1, l1, N1, lo, z)
+#                 b = sum( (calculateBnormFromLoop(I1, r2, z2, lo, z) for r2, z2 in self.distributionInRealCoordinates) )
+#                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
+#                 bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2
+#         print(f'M = {M}')
+#         print(f'L2 = {L2}')
+#         print(f'I2 = {1/sqrt(1+(R2/L2)**2)*M/L2 * I1}')
+#         _los, _zs = nu.meshgrid(los, zs, indexing='ij')
+#         pl.title('Bnorm Distribution around Coil', fontsize=28)
+#         pl.xlabel(r'$\rho$ Axis', fontsize=24)
+#         pl.ylabel(r'$z$ Axis', fontsize=24)
+#         pl.contourf(_los, _zs, bs)
+#         pl.colorbar()
+#         pl.tick_params(labelsize=18)
+#         pl.show()
 
 
 class GeneticAgent():
@@ -393,7 +419,7 @@ class GeneticAgent():
         losses = nu.load('minLosses.npy')
         pl.title('Loss', fontsize=24)
         pl.xlabel('Step (180 different coils compared in each step.)', fontsize=22)
-        pl.ylabel(r'Loss = $Bz_{internal}$ Mean / $Bz_{external}$ Variance [-]', fontsize=22)
+        pl.ylabel(r'Loss = $B_{internal}$ Mean / $B_{external}$ Mean [-]', fontsize=22)
         pl.tick_params(labelsize=16)
         pl.plot(losses)
         pl.show()
@@ -426,19 +452,6 @@ class GeneticAgent():
 
 
 # Main
-
-# # Ouer Coil
-# r1 = 6.1e-2
-# N1 = 1000
-# l1 = 17.8e-2  # 20cm
-# I1 = 1000
-# R2 = 1e-7
-# Ouer Coil
-r1 = 30e-2
-N1 = 1000
-l1 = 60e-2  # 60cm
-I1 = 1000
-R2 = 1e-7
 
 
 if __name__ == '__main__':

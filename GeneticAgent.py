@@ -93,7 +93,7 @@ def lossFunction(coil, points=50):
     assert loss >= 0
     # add to generationQueue
     coil.loss = loss
-    return coil
+    return L2, M, coil
 
 
 def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
@@ -278,7 +278,7 @@ class GeneticAgent():
         self.B0 = 1
 
         self.survivalPerGeneration = 20
-        self.descendantsPerLife = 8
+        self.descendantsPerLife = 4
         # set avgLosses
         if os.path.exists('averageLosses.pickle'):
             with open('averageLosses.pickle', 'rb') as file:

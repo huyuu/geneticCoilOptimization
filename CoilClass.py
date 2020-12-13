@@ -36,7 +36,7 @@ class GeneticCoil():
         coil = cls(length=baseCoil.length, minRadius=baseCoil.minRadius, scWidth=baseCoil.scWidth, scThickness=baseCoil.scThickness, stairAmount=baseCoil.columnAmount, layerAmount=baseCoil.rowAmount)
         coil.distribution = baseCoil.distribution.copy()
         coil.distributionInRealCoordinates = baseCoil.distributionInRealCoordinates.copy()
-        coil.loss = baseCoil.loss
+        # coil.loss = baseCoil.loss
         return coil
 
 
@@ -169,10 +169,10 @@ class GeneticCoil():
                 # loss += (a - b/sqrt(1+(R2/L2)**2)*M/L2)**2
                 bs[i, j] = a - b/sqrt(1+(R2/L2)**2)*M/L2
         _los, _zs = nu.meshgrid(los, zs, indexing='ij')
-        pl.title('Bnorm Distribution around Coil', fontsize=28)
-        pl.xlabel(r'$\rho$ Axis', fontsize=24)
-        pl.ylabel(r'$z$ Axis', fontsize=24)
-        pl.contourf(_los, _zs, bs)
+        pl.title('Bnorm Distribution around Coil [T]', fontsize=28)
+        pl.xlabel(r'$\rho$ Axis [cm]', fontsize=24)
+        pl.ylabel(r'$z$ Axis [cm]', fontsize=24)
+        pl.contourf(_los*1e2, _zs*1e2, bs)
         pl.colorbar()
         pl.tick_params(labelsize=18)
         pl.show()

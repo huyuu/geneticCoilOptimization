@@ -86,6 +86,7 @@ class GeneticCoil():
             coil.distribution[row, -1-column] = 0
         # print(coil.distribution[-2:, :])
         # print(' ')
+        coil.distributionInRealCoordinates = coil.calculateDistributionInRealCoordinates()
         coil.loss = None
         return coil
 

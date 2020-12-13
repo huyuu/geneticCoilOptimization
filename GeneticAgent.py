@@ -93,7 +93,7 @@ def lossFunction(coil, points=50):
     assert loss >= 0
     # add to generationQueue
     coil.loss = loss
-    return L2, M, coil
+    return coil
 
 
 def lossFunctionForCluster(rawQueue, cookedQueue, hostIP, hostPort):
